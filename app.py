@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay (Google Floats)")
-st.caption("💻 **Phím SPACE / Click chuột trên Máy tính** | 📱 **Chạm màn hình trên Điện thoại**")
+st.caption("💡 **Mẹo:** Nếu phím Space chưa ăn, bạn chỉ cần **Click chuột/Chạm 1 lần** vào màn hình game để kích hoạt bàn phím nhé!")
 
 game_html = """
 <!DOCTYPE html>
@@ -38,6 +38,7 @@ game_html = """
         justify-content: center; 
         align-items: center; 
         font-family: system-ui, -apple-system, sans-serif;
+        outline: none;
     }
     #gameContainer { 
         position: relative; 
@@ -62,18 +63,23 @@ game_html = """
         width: 100%; 
         height: 100%; 
         display: block; 
+        outline: none;
     }
 </style>
 </head>
-<body tabindex="0">
+<body id="gameBody" tabindex="0">
     <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" tabindex="1"></canvas>
     </div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const container = document.getElementById('gameContainer');
+
+// Tự động focus vào canvas/iframe khi trang load
+window.focus();
+canvas.focus();
 
 let GAME_WIDTH = 800;
 let GAME_HEIGHT = 450;
@@ -212,10 +218,13 @@ function triggerGameOver() {
     };
 }
 
-// XỬ LÝ SỰ KIỆN PHÍM SPACE VÀ THAO TÁC CHẠM
+// XỬ LÝ SỰ KIỆN PHÍM SPACE VÀ THAO TÁC CẢM ỨNG / CLICK
 function handleInput(e) {
+    window.focus();
+    canvas.focus();
+
     if (e) {
-        // Kiểm tra phím bấm
+        // Xử lý phím bấm Space
         if (e.type === 'keydown') {
             if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
                 if (e.preventDefault) e.preventDefault();
@@ -224,7 +233,7 @@ function handleInput(e) {
             }
         }
         
-        // Kiểm tra bấm nút Mute
+        // Kiểm tra Click nút Mute
         if (e.type === 'mousedown' || e.type === 'touchstart') {
             let rect = canvas.getBoundingClientRect();
             let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
@@ -267,7 +276,7 @@ function handleInput(e) {
     }
 }
 
-// Đăng ký bắt phím Space trên mọi đối tượng trình duyệt
+// Đăng ký nhận phím Space trên window, document và canvas
 window.addEventListener('keydown', handleInput, true);
 document.addEventListener('keydown', handleInput, true);
 canvas.addEventListener('touchstart', handleInput, { passive: false });
@@ -478,7 +487,7 @@ function update() {
     frameCount++;
     if (frameCount % 10 === 0) score += 1;
 
-    // CHƯỚNG NGẠI VẬT XUẤT HIỆN NGẪU NHIÊN (LOẠI, VỊ TRÍ, KHOẢNG CÁCH)
+    // CHƯỚNG NGẠI VẬT XUẤT HIỆN NGẪU NHIÊN
     if (frameCount >= nextObstacleFrame) {
         let type = Math.random() > 0.5 ? 'crow' : 'cloud';
         let obsY = Math.floor(Math.random() * (GAME_HEIGHT - 170)) + 30;
@@ -514,7 +523,7 @@ function update() {
 }
 
 function drawUI() {
-    // 1. HIỂN THỊ FPS GÓC TRÊN BÊN TRÁI
+    // FPS góc trái
     ctx.fillStyle = '#00ffcc';
     ctx.font = 'bold 16px monospace';
     ctx.textAlign = 'left';
@@ -522,14 +531,14 @@ function drawUI() {
     ctx.shadowBlur = 3;
     ctx.fillText('FPS: ' + fps, 15, 30);
 
-    // 2. Điểm số góc phải
+    // Điểm số
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
     ctx.shadowBlur = 0;
 
-    // 3. Nút Âm Thanh
+    // Nút Mute
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath();
     ctx.arc(GAME_WIDTH - 35, 30, 22, 0, Math.PI * 2);
@@ -544,7 +553,7 @@ function drawUI() {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('👉 BẤM SPACE HOẶC CHẠM ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        ctx.fillText('👉 BẤM SPACE HOẶC CLICK/CHẠM ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
     }
 
     if (gameOver) {
@@ -561,7 +570,6 @@ function drawUI() {
 }
 
 function draw() {
-    // Tính toán FPS thực tế
     let now = performance.now();
     let delta = (now - lastFrameTime) / 1000;
     if (delta > 0) {
