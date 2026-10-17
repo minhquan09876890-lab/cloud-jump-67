@@ -580,7 +580,7 @@ function drawUI() {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('👉 BẤM SPACE HOẶC CLICK/CHẠM ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        ctx.fillText('👉 BẤM SPACE HOẶC CLICK ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
     }
 
     if (gameOver) {
@@ -625,7 +625,7 @@ function drawUI() {
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 15px sans-serif';
-        ctx.fillText('🎮 Bấm Space / Chơi Lại', GAME_WIDTH / 2, btnY + 26);
+        ctx.fillText('🎮 Bấm SPACE/CLICK Chơi Lại', GAME_WIDTH / 2, btnY + 26);
     }
 }
 
