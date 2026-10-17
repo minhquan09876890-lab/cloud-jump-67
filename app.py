@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("trò chơi siêu cấp bá khí")
+st.caption("🥶trò chơi siêu cấp bá khí🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -580,7 +580,7 @@ function drawUI() {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('👉 BẤM SPACE HOẶC CLICK ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        ctx.fillText('👉 BẤM SPACE/CLICK ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
     }
 
     if (gameOver) {
@@ -625,7 +625,7 @@ function drawUI() {
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 15px sans-serif';
-        ctx.fillText('🎮 Bấm SPACE/CLICK Chơi Lại', GAME_WIDTH / 2, btnY + 26);
+        ctx.fillText('🎮Chơi Lại🎮', GAME_WIDTH / 2, btnY + 26);
     }
 }
 
