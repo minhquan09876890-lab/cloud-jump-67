@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay (Google Floats)")
-st.caption("🔥 **Càng chơi điểm càng cao, tốc độ sẽ càng nhanh và chướng ngại vật sẽ càng dày đặc!**")
+st.caption("✨ **Đã cập nhật giao diện Game Over hiện đại & Nhạc nền 8-bit sôi động mới!**")
 
 game_html = """
 <!DOCTYPE html>
@@ -98,11 +98,11 @@ let windParticles = [];
 let frameCount = 0;
 let nextObstacleFrame = 60;
 let score = 0;
+let highScore = localStorage.getItem('google_floats_highscore') || 0;
 let gameOver = false;
 let gameStarted = false;
 let isMuted = false;
 
-// ĐIỀU CHỈNH ĐỘ KHÓ TĂNG DẦN
 let baseSpeed = 4.0;
 let obstacleSpeed = 4.0;
 
@@ -115,17 +115,18 @@ let droppedUmbrella = { x: 0, y: 0, vx: 0, vy: 0, rot: 0 };
 let bgCloudX = 0;
 let bgHillNearX = 0;
 
-// --- ÂM THANH ---
+// --- NHẠC NỀN 8-BIT MỚI SÔI ĐỘNG HƠN ---
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let bgmTimer = null;
 let bgmNoteIndex = 0;
 
+// Giai điệu mới tiết tấu nhanh, vui tươi
 const bgmMelody = [
-    261.63, 329.63, 392.00, 523.25, 392.00, 329.63,
-    293.66, 349.23, 440.00, 587.33, 440.00, 349.23,
-    329.63, 392.00, 493.88, 659.25, 493.88, 392.00,
-    349.23, 440.00, 523.25, 698.46, 523.25, 440.00
+    329.63, 329.63, 0, 329.63, 0, 261.63, 329.63, 0,
+    392.00, 0, 0, 0, 196.00, 0, 0, 0,
+    261.63, 0, 0, 196.00, 0, 0, 164.81, 0,
+    220.00, 0, 246.94, 0, 233.08, 220.00, 0, 196.00
 ];
 
 function initAudio() {
@@ -139,18 +140,20 @@ function startBGM() {
     bgmTimer = setInterval(() => {
         if (!gameStarted || gameOver || isMuted || !audioCtx) return;
         let freq = bgmMelody[bgmNoteIndex];
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.18);
+        if (freq > 0) {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        }
         bgmNoteIndex = (bgmNoteIndex + 1) % bgmMelody.length;
-    }, 200);
+    }, 150);
 }
 
 function stopBGM() {
@@ -210,6 +213,11 @@ function triggerGameOver() {
     shakeTime = 12;
     stopBGM();
     playHitSound();
+
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('google_floats_highscore', highScore);
+    }
 
     droppedUmbrella = {
         x: cloud.x + 28,
@@ -474,8 +482,7 @@ function drawThunderCloud(x, y) {
 function update() {
     if (gameOver || !gameStarted) return;
 
-    // TÍNH TOÁN ĐỘ KHÓ TĂNG THEO ĐIỂM SỐ
-    obstacleSpeed = baseSpeed + (score / 100) * 0.3; // Mỗi 100 điểm tăng 0.3 tốc độ
+    obstacleSpeed = baseSpeed + (score / 100) * 0.3;
 
     cloud.velocity += cloud.gravity;
     cloud.y += cloud.velocity;
@@ -488,7 +495,6 @@ function update() {
     frameCount++;
     if (frameCount % 10 === 0) score += 1;
 
-    // TẠO CHƯỚNG NGẠI VẬT: CÀNG CAO ĐIỂM THỜI GIAN XUẤT HIỆN CÀNG NGẮN
     if (frameCount >= nextObstacleFrame) {
         let type = Math.random() > 0.5 ? 'crow' : 'cloud';
         let obsY = Math.floor(Math.random() * (GAME_HEIGHT - 170)) + 30;
@@ -501,7 +507,6 @@ function update() {
             type: type
         });
 
-        // Giảm khoảng cách thời gian giữa các vật cản khi điểm tăng
         let minInterval = Math.max(25, 45 - Math.floor(score / 50));
         let maxInterval = Math.max(50, 105 - Math.floor(score / 40));
         let randomInterval = Math.floor(Math.random() * (maxInterval - minInterval)) + minInterval;
@@ -536,7 +541,7 @@ function drawUI() {
     ctx.shadowBlur = 3;
     ctx.fillText('FPS: ' + fps, 15, 30);
 
-    // Hiển thị tốc độ hiện tại
+    // Tốc độ
     ctx.fillStyle = '#fde047';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 52);
@@ -566,16 +571,56 @@ function drawUI() {
         ctx.fillText('👉 BẤM SPACE HOẶC CLICK/CHẠM ĐỂ BẮT ĐẦU 👈', GAME_WIDTH / 2, GAME_HEIGHT / 2);
     }
 
+    // --- GIAO DIỆN KHI THUA MỚI HIỆN ĐẠI ---
     if (gameOver) {
-        ctx.fillStyle = 'rgba(225, 29, 72, 0.88)';
+        // Lớp nền mờ tối
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 28px sans-serif';
+
+        // Khung Bảng Điểm (Card Overlay)
+        let cardW = 320;
+        let cardH = 220;
+        let cardX = (GAME_WIDTH - cardW) / 2;
+        let cardY = (GAME_HEIGHT - cardH) / 2;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardW, cardH, 16);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Tiêu đề Game Over
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 26px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25);
-        ctx.font = '18px sans-serif';
-        ctx.fillText('Điểm của bạn: ' + score, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 15);
-        ctx.fillText('👉 Bấm Space hoặc Chạm để chơi lại', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 55);
+        ctx.fillText('GAME OVER!', GAME_WIDTH / 2, cardY + 45);
+
+        // Hiển thị Điểm Số
+        ctx.fillStyle = '#334155';
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Điểm số: ' + score, GAME_WIDTH / 2, cardY + 82);
+
+        // Hiển thị Kỷ lục High Score
+        ctx.fillStyle = '#d97706';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('🏆 Kỷ lục: ' + highScore, GAME_WIDTH / 2, cardY + 112);
+
+        // Nút Chơi Lại (Button Design)
+        let btnW = 200;
+        let btnH = 42;
+        let btnX = (GAME_WIDTH - btnW) / 2;
+        let btnY = cardY + 145;
+
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.roundRect(btnX, btnY, btnW, btnH, 20);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.fillText('🎮 Bấm Space / Chơi Lại', GAME_WIDTH / 2, btnY + 26);
     }
 }
 
