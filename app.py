@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay (Google Floats)")
-st.caption("🎧 **Đã đổi âm thanh & Nhạc nền phong cách Chill / Lo-fi êm dịu, thư giãn!**")
+st.caption("🎧 **Đã sửa lỗi & cập nhật âm thanh Lo-fi chill êm dịu!**")
 
 game_html = """
 <!DOCTYPE html>
@@ -126,7 +126,7 @@ const chillChords = [
     [220.00, 277.18, 329.63, 415.30], // Amaj7
     [185.00, 220.00, 277.18, 329.63], // F#m7
     [246.94, 293.66, 369.99, 440.00], // Bm7
-    [164.81, 246.94, 311.13, 392.00]  # E7
+    [164.81, 246.94, 311.13, 392.00]  // E7
 ];
 
 function initAudio() {
@@ -145,13 +145,11 @@ function startBGM() {
         let chord = chillChords[chordIndex];
         let noteFreq = chord[bgmStep % 4];
 
-        // Tạo nốt nhạc êm dịu (Soft Sine/Triangle)
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(noteFreq, audioCtx.currentTime);
 
-        // Hiệu ứng ngân vang thư thái
         gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
         gain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.1);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
@@ -163,7 +161,7 @@ function startBGM() {
         osc.stop(audioCtx.currentTime + 0.85);
 
         bgmStep++;
-    }, 450); // Nhịp điệu thong thả, thư giãn
+    }, 450);
 }
 
 function stopBGM() {
@@ -173,7 +171,6 @@ function stopBGM() {
     }
 }
 
-// Sound Jump: Tiếng Bong Bóng Nhẹ (Bubble Soft Sound)
 function playJumpSound() {
     if (!audioCtx || isMuted) return;
     let osc = audioCtx.createOscillator();
@@ -191,10 +188,9 @@ function playJumpSound() {
     osc.stop(audioCtx.currentTime + 0.12);
 }
 
-// Sound Score: Chuông Gió Thanh Thoát (Warm Chime)
 function playScoreSound() {
     if (!audioCtx || isMuted) return;
-    let notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    let notes = [523.25, 659.25, 783.99];
     notes.forEach((freq, idx) => {
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
@@ -211,7 +207,6 @@ function playScoreSound() {
     });
 }
 
-// Sound Hit: Âm Trầm Dịu Êm (Soft Muted Drop)
 function playHitSound() {
     if (!audioCtx || isMuted) return;
     let osc = audioCtx.createOscillator();
@@ -554,7 +549,6 @@ function update() {
 }
 
 function drawUI() {
-    // FPS góc trái
     ctx.fillStyle = '#00ffcc';
     ctx.font = 'bold 16px monospace';
     ctx.textAlign = 'left';
@@ -562,19 +556,16 @@ function drawUI() {
     ctx.shadowBlur = 3;
     ctx.fillText('FPS: ' + fps, 15, 30);
 
-    // Tốc độ
     ctx.fillStyle = '#fde047';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 52);
 
-    // Điểm số
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
     ctx.shadowBlur = 0;
 
-    // Nút Mute
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath();
     ctx.arc(GAME_WIDTH - 35, 30, 22, 0, Math.PI * 2);
