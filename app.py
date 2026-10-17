@@ -10,7 +10,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("☁️ Trò Chơi Đám Mây Bay (Google Floats)")
+st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
 st.caption("trò chơi siêu cấp bá khí")
 
 game_html = """
