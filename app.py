@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay (Google Floats)")
-st.caption("💡 **Mẹo:** Nếu phím Space chưa ăn, bạn chỉ cần **Click chuột/Chạm 1 lần** vào màn hình game để kích hoạt bàn phím nhé!")
+st.caption("🔥 **Càng chơi điểm càng cao, tốc độ sẽ càng nhanh và chướng ngại vật sẽ càng dày đặc!**")
 
 game_html = """
 <!DOCTYPE html>
@@ -77,7 +77,6 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const container = document.getElementById('gameContainer');
 
-// Tự động focus vào canvas/iframe khi trang load
 window.focus();
 canvas.focus();
 
@@ -103,7 +102,10 @@ let gameOver = false;
 let gameStarted = false;
 let isMuted = false;
 
-// Đếm FPS
+// ĐIỀU CHỈNH ĐỘ KHÓ TĂNG DẦN
+let baseSpeed = 4.0;
+let obstacleSpeed = 4.0;
+
 let lastFrameTime = performance.now();
 let fps = 60;
 
@@ -218,13 +220,11 @@ function triggerGameOver() {
     };
 }
 
-// XỬ LÝ SỰ KIỆN PHÍM SPACE VÀ THAO TÁC CẢM ỨNG / CLICK
 function handleInput(e) {
     window.focus();
     canvas.focus();
 
     if (e) {
-        // Xử lý phím bấm Space
         if (e.type === 'keydown') {
             if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
                 if (e.preventDefault) e.preventDefault();
@@ -233,7 +233,6 @@ function handleInput(e) {
             }
         }
         
-        // Kiểm tra Click nút Mute
         if (e.type === 'mousedown' || e.type === 'touchstart') {
             let rect = canvas.getBoundingClientRect();
             let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
@@ -276,7 +275,6 @@ function handleInput(e) {
     }
 }
 
-// Đăng ký nhận phím Space trên window, document và canvas
 window.addEventListener('keydown', handleInput, true);
 document.addEventListener('keydown', handleInput, true);
 canvas.addEventListener('touchstart', handleInput, { passive: false });
@@ -284,8 +282,8 @@ canvas.addEventListener('mousedown', handleInput);
 
 function drawBackground() {
     if (gameStarted && !gameOver) {
-        bgCloudX = (bgCloudX - 0.7) % GAME_WIDTH;
-        bgHillNearX = (bgHillNearX - 2.0) % GAME_WIDTH;
+        bgCloudX = (bgCloudX - (0.7 * (obstacleSpeed / 4))) % GAME_WIDTH;
+        bgHillNearX = (bgHillNearX - (2.0 * (obstacleSpeed / 4))) % GAME_WIDTH;
     }
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
@@ -476,6 +474,9 @@ function drawThunderCloud(x, y) {
 function update() {
     if (gameOver || !gameStarted) return;
 
+    // TÍNH TOÁN ĐỘ KHÓ TĂNG THEO ĐIỂM SỐ
+    obstacleSpeed = baseSpeed + (score / 100) * 0.3; // Mỗi 100 điểm tăng 0.3 tốc độ
+
     cloud.velocity += cloud.gravity;
     cloud.y += cloud.velocity;
     cloud.rotation = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, cloud.velocity * 0.05));
@@ -487,7 +488,7 @@ function update() {
     frameCount++;
     if (frameCount % 10 === 0) score += 1;
 
-    // CHƯỚNG NGẠI VẬT XUẤT HIỆN NGẪU NHIÊN
+    // TẠO CHƯỚNG NGẠI VẬT: CÀNG CAO ĐIỂM THỜI GIAN XUẤT HIỆN CÀNG NGẮN
     if (frameCount >= nextObstacleFrame) {
         let type = Math.random() > 0.5 ? 'crow' : 'cloud';
         let obsY = Math.floor(Math.random() * (GAME_HEIGHT - 170)) + 30;
@@ -500,12 +501,16 @@ function update() {
             type: type
         });
 
-        let randomInterval = Math.floor(Math.random() * 60) + 45;
+        // Giảm khoảng cách thời gian giữa các vật cản khi điểm tăng
+        let minInterval = Math.max(25, 45 - Math.floor(score / 50));
+        let maxInterval = Math.max(50, 105 - Math.floor(score / 40));
+        let randomInterval = Math.floor(Math.random() * (maxInterval - minInterval)) + minInterval;
+        
         nextObstacleFrame = frameCount + randomInterval;
     }
 
     for (let i = 0; i < obstacles.length; i++) {
-        obstacles[i].x -= 4.2;
+        obstacles[i].x -= obstacleSpeed;
 
         if (cloud.x + 8 < obstacles[i].x + obstacles[i].width &&
             cloud.x + cloud.width - 8 > obstacles[i].x &&
@@ -530,6 +535,11 @@ function drawUI() {
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 3;
     ctx.fillText('FPS: ' + fps, 15, 30);
+
+    // Hiển thị tốc độ hiện tại
+    ctx.fillStyle = '#fde047';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 52);
 
     // Điểm số
     ctx.fillStyle = '#ffffff';
@@ -610,6 +620,7 @@ function resetGame() {
     score = 0;
     frameCount = 0;
     nextObstacleFrame = 60;
+    obstacleSpeed = baseSpeed;
     gameOver = false;
     gameStarted = true;
     shakeTime = 0;
