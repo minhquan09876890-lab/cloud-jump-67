@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí - Đạt 200-300 điểm để chuyển đổi Ngày & Đêm 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí - Thêm đo CPS & Ngôi sao chuyển động ban đêm 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -109,18 +109,23 @@ let obstacleSpeed = 4.0;
 let lastFrameTime = performance.now();
 let fps = 60;
 
+// ĐO CPS (Clicks Per Second)
+let clickTimestamps = [];
+let currentCPS = 0;
+
 let shakeTime = 0;
 let droppedUmbrella = { x: 0, y: 0, vx: 0, vy: 0, rot: 0 };
 
 let bgCloudX = 0;
 let bgHillNearX = 0;
 
-// Khởi tạo các ngôi sao ban đêm
-for (let i = 0; i < 40; i++) {
+// Khởi tạo ngôi sao ban đêm có tốc độ di chuyển
+for (let i = 0; i < 45; i++) {
     stars.push({
         x: Math.random() * 960,
-        y: Math.random() * 250,
+        y: Math.random() * 260,
         size: Math.random() * 2 + 1,
+        speed: Math.random() * 0.4 + 0.1, // Tốc độ trôi nhẹ
         alpha: Math.random()
     });
 }
@@ -253,6 +258,11 @@ function triggerGameOver() {
     };
 }
 
+function recordClick() {
+    let now = performance.now();
+    clickTimestamps.push(now);
+}
+
 function handleInput(e) {
     window.focus();
     canvas.focus();
@@ -284,6 +294,7 @@ function handleInput(e) {
         }
     }
 
+    recordClick();
     initAudio();
     
     if (gameOver) { resetGame(); return; }
@@ -313,18 +324,12 @@ document.addEventListener('keydown', handleInput, true);
 canvas.addEventListener('touchstart', handleInput, { passive: false });
 canvas.addEventListener('mousedown', handleInput);
 
-// HÀM VẼ BẦU TRỜI NGÀY & ĐÊM THEO MỐC ĐIỂM (200 - 300 ĐIỂM CHUYỂN ĐỔI)
 function drawBackground() {
     if (gameStarted && !gameOver) {
         bgCloudX = (bgCloudX - (0.7 * (obstacleSpeed / 4))) % GAME_WIDTH;
         bgHillNearX = (bgHillNearX - (2.0 * (obstacleSpeed / 4))) % GAME_WIDTH;
     }
 
-    // TÍNH TOÁN THEO ĐIỂM SỐ:
-    // 0 - 200 điểm: Ban ngày (nightRatio = 0)
-    // 200 - 300 điểm: Chuyển đổi sang Đêm (nightRatio 0.0 -> 1.0)
-    // 300 - 500 điểm: Ban đêm (nightRatio = 1)
-    // 500 - 600 điểm: Chuyển đổi về Ngày (nightRatio 1.0 -> 0.0)
     let scoreCycle = score % 600;
     let nightRatio = 0;
 
@@ -336,7 +341,6 @@ function drawBackground() {
         nightRatio = 1 - (scoreCycle - 500) / 100;
     }
 
-    // Gradient Bầu trời
     let topR = Math.round(2 * (1 - nightRatio) + 15 * nightRatio);
     let topG = Math.round(132 * (1 - nightRatio) + 23 * nightRatio);
     let topB = Math.round(199 * (1 - nightRatio) + 42 * nightRatio);
@@ -351,7 +355,7 @@ function drawBackground() {
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // Vẽ Mặt Trăng Ban Đêm khi bắt đầu chuyển màu
+    // Mặt Trăng Ban Đêm
     if (nightRatio > 0) {
         ctx.save();
         ctx.globalAlpha = nightRatio;
@@ -365,8 +369,13 @@ function drawBackground() {
         ctx.arc(GAME_WIDTH - 110, 72, 22, 0, Math.PI * 2);
         ctx.fill();
 
-        // Vẽ Sao Nhấp Nháy
+        // Vẽ Ngôi Sao Chuyển Động
         stars.forEach(s => {
+            if (gameStarted && !gameOver) {
+                s.x -= s.speed * (obstacleSpeed / 4);
+                if (s.x < 0) s.x = GAME_WIDTH + Math.random() * 20;
+            }
+
             ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * nightRatio})`;
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
@@ -622,24 +631,43 @@ function update() {
     }
 }
 
+function updateCPS() {
+    let now = performance.now();
+    // Loại bỏ các cú nhấp quá 1 giây (1000ms)
+    clickTimestamps = clickTimestamps.filter(t => now - t <= 1000);
+    currentCPS = clickTimestamps.length;
+}
+
 function drawUI() {
-    ctx.fillStyle = '#00ffcc';
-    ctx.font = 'bold 16px monospace';
-    ctx.textAlign = 'left';
+    updateCPS();
+
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 3;
-    ctx.fillText('FPS: ' + fps, 15, 30);
+    ctx.textAlign = 'left';
 
+    // 1. Chỉ số FPS
+    ctx.fillStyle = '#00ffcc';
+    ctx.font = 'bold 15px monospace';
+    ctx.fillText('FPS  : ' + fps, 15, 28);
+
+    // 2. Chỉ số Tốc độ (SPEED)
     ctx.fillStyle = '#fde047';
     ctx.font = 'bold 14px monospace';
-    ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 52);
+    ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 48);
 
+    // 3. Chỉ số CPS (Clicks Per Second)
+    ctx.fillStyle = '#ff77e9';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText('CPS  : ' + currentCPS, 15, 68);
+
+    // Điểm số góc phải
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
     ctx.shadowBlur = 0;
 
+    // Nút Mute
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath();
     ctx.arc(GAME_WIDTH - 35, 30, 22, 0, Math.PI * 2);
@@ -741,6 +769,7 @@ function resetGame() {
     cloud.rotation = 0;
     obstacles = [];
     windParticles = [];
+    clickTimestamps = [];
     score = 0;
     frameCount = 0;
     nextObstacleFrame = 60;
