@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí - Cập nhật hiệu ứng Ngày & Đêm 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí - Đạt 200-300 điểm để chuyển đổi Ngày & Đêm 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -313,24 +313,27 @@ document.addEventListener('keydown', handleInput, true);
 canvas.addEventListener('touchstart', handleInput, { passive: false });
 canvas.addEventListener('mousedown', handleInput);
 
-// HÀM VẼ BẦU TRỜI NGÀY & ĐÊM
+// HÀM VẼ BẦU TRỜI NGÀY & ĐÊM THEO MỐC ĐIỂM (200 - 300 ĐIỂM CHUYỂN ĐỔI)
 function drawBackground() {
     if (gameStarted && !gameOver) {
         bgCloudX = (bgCloudX - (0.7 * (obstacleSpeed / 4))) % GAME_WIDTH;
         bgHillNearX = (bgHillNearX - (2.0 * (obstacleSpeed / 4))) % GAME_WIDTH;
     }
 
-    // Tính toán chu kỳ ngày/đêm theo frameCount (mỗi chu kỳ ~ 1200 frames / 20 giây)
-    let cycle = (frameCount % 1200) / 1200; // Value from 0.0 to 1.0
-    
-    // Tỷ lệ Ban đêm: 0.0 -> 0.35 (Ngày), 0.35 -> 0.5 (Hoàng hôn), 0.5 -> 0.85 (Đêm), 0.85 -> 1.0 (Bình minh)
+    // TÍNH TOÁN THEO ĐIỂM SỐ:
+    // 0 - 200 điểm: Ban ngày (nightRatio = 0)
+    // 200 - 300 điểm: Chuyển đổi sang Đêm (nightRatio 0.0 -> 1.0)
+    // 300 - 500 điểm: Ban đêm (nightRatio = 1)
+    // 500 - 600 điểm: Chuyển đổi về Ngày (nightRatio 1.0 -> 0.0)
+    let scoreCycle = score % 600;
     let nightRatio = 0;
-    if (cycle > 0.35 && cycle <= 0.5) {
-        nightRatio = (cycle - 0.35) / 0.15;
-    } else if (cycle > 0.5 && cycle <= 0.85) {
+
+    if (scoreCycle >= 200 && scoreCycle <= 300) {
+        nightRatio = (scoreCycle - 200) / 100;
+    } else if (scoreCycle > 300 && scoreCycle < 500) {
         nightRatio = 1;
-    } else if (cycle > 0.85) {
-        nightRatio = 1 - (cycle - 0.85) / 0.15;
+    } else if (scoreCycle >= 500 && scoreCycle <= 600) {
+        nightRatio = 1 - (scoreCycle - 500) / 100;
     }
 
     // Gradient Bầu trời
@@ -348,7 +351,7 @@ function drawBackground() {
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // Vẽ Mặt Trăng Ban Đêm
+    // Vẽ Mặt Trăng Ban Đêm khi bắt đầu chuyển màu
     if (nightRatio > 0) {
         ctx.save();
         ctx.globalAlpha = nightRatio;
@@ -356,7 +359,7 @@ function drawBackground() {
         ctx.beginPath();
         ctx.arc(GAME_WIDTH - 120, 80, 26, 0, Math.PI * 2);
         ctx.fill();
-        // Che mặt trăng tạo hình khuyết
+
         ctx.fillStyle = `rgb(${topR}, ${topG}, ${topB})`;
         ctx.beginPath();
         ctx.arc(GAME_WIDTH - 110, 72, 22, 0, Math.PI * 2);
