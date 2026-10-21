@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí - Đã tăng âm lượng toàn bộ âm thanh 🔊 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -129,7 +129,7 @@ for (let i = 0; i < 45; i++) {
     });
 }
 
-// --- HỆ THỐNG ÂM THANH ĐÃ SỬA LỖI (FIXED AUDIO ENGINE) ---
+// --- HỆ THỐNG ÂM THANH (TĂNG ÂM LƯỢNG) ---
 let audioCtx = null;
 let bgmTimer = null;
 let bgmStep = 0;
@@ -172,8 +172,9 @@ function startBGM() {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(noteFreq, audioCtx.currentTime);
 
+            // Tăng âm lượng BGM lên 0.06
             gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.1);
+            gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.1);
             gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
 
             osc.connect(gain);
@@ -203,7 +204,8 @@ function playJumpSound() {
         osc.frequency.setValueAtTime(260, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.12);
         
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        // Tăng âm lượng tiếng nhảy lên 0.22
+        gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
         
         osc.connect(gain);
@@ -223,7 +225,8 @@ function playScoreSound() {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.05);
             
-            gain.gain.setValueAtTime(0.04, audioCtx.currentTime + idx * 0.05);
+            // Tăng âm lượng tiếng ghi điểm lên 0.15
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime + idx * 0.05);
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.05 + 0.3);
             
             osc.connect(gain);
@@ -243,7 +246,8 @@ function playHitSound() {
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.35);
         
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        // Tăng âm lượng tiếng va chạm lên 0.35
+        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
         gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
         
         osc.connect(gain);
@@ -371,7 +375,6 @@ function drawBackground() {
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // Mặt Trăng Ban Đêm
     if (nightRatio > 0) {
         ctx.save();
         ctx.globalAlpha = nightRatio;
@@ -389,7 +392,6 @@ function drawBackground() {
         ctx.arc(GAME_WIDTH - 110, 72, 22, 0, Math.PI * 2);
         ctx.fill();
 
-        // Ngôi Sao Chuyển Động
         stars.forEach(s => {
             if (gameStarted && !gameOver) {
                 s.x -= s.speed * (obstacleSpeed / 4);
@@ -406,7 +408,6 @@ function drawBackground() {
         ctx.restore();
     }
 
-    // Mây nền
     let cloudAlpha = 0.45 - nightRatio * 0.25;
     ctx.fillStyle = `rgba(255, 255, 255, ${cloudAlpha})`;
     for (let offset of [bgCloudX, bgCloudX + GAME_WIDTH]) {
@@ -431,7 +432,6 @@ function drawBackground() {
         ctx.fill();
     }
 
-    // Đồi đằng trước
     let hillR = Math.round(21 * (1 - nightRatio) + 6 * nightRatio);
     let hillG = Math.round(128 * (1 - nightRatio) + 40 * nightRatio);
     let hillB = Math.round(61 * (1 - nightRatio) + 25 * nightRatio);
@@ -606,7 +606,6 @@ function drawThunderCloud(x, y) {
 function drawShaders() {
     ctx.save();
     
-    // Vignette Shader
     let vigGrad = ctx.createRadialGradient(
         GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.35,
         GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.7
@@ -616,7 +615,6 @@ function drawShaders() {
     ctx.fillStyle = vigGrad;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // Scanline Retro Shader
     ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
     for (let y = 0; y < GAME_HEIGHT; y += 4) {
         ctx.fillRect(0, y, GAME_WIDTH, 1.5);
@@ -710,7 +708,6 @@ function drawUI() {
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
     ctx.restore();
 
-    // NÚT LOA MUTE / UNMUTE
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
     ctx.shadowBlur = 6;
