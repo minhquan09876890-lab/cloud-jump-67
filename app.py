@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí - Thêm đo CPS & Ngôi sao chuyển động ban đêm 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí - Nút bật/tắt âm thanh rõ ràng nổi bật hơn 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -125,7 +125,7 @@ for (let i = 0; i < 45; i++) {
         x: Math.random() * 960,
         y: Math.random() * 260,
         size: Math.random() * 2 + 1,
-        speed: Math.random() * 0.4 + 0.1, // Tốc độ trôi nhẹ
+        speed: Math.random() * 0.4 + 0.1,
         alpha: Math.random()
     });
 }
@@ -633,7 +633,6 @@ function update() {
 
 function updateCPS() {
     let now = performance.now();
-    // Loại bỏ các cú nhấp quá 1 giây (1000ms)
     clickTimestamps = clickTimestamps.filter(t => now - t <= 1000);
     currentCPS = clickTimestamps.length;
 }
@@ -641,40 +640,52 @@ function updateCPS() {
 function drawUI() {
     updateCPS();
 
+    ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 3;
     ctx.textAlign = 'left';
 
-    // 1. Chỉ số FPS
+    // Chỉ số FPS
     ctx.fillStyle = '#00ffcc';
     ctx.font = 'bold 15px monospace';
     ctx.fillText('FPS  : ' + fps, 15, 28);
 
-    // 2. Chỉ số Tốc độ (SPEED)
+    // Chỉ số SPEED
     ctx.fillStyle = '#fde047';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 48);
 
-    // 3. Chỉ số CPS (Clicks Per Second)
+    // Chỉ số CPS
     ctx.fillStyle = '#ff77e9';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('CPS  : ' + currentCPS, 15, 68);
 
-    // Điểm số góc phải
+    // Điểm số
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
-    ctx.shadowBlur = 0;
+    ctx.restore();
 
-    // Nút Mute
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    // NÚT LOA NỔI BẬT & RÕ RÀNG HƠN (MUTE / UNMUTE)
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 6;
+    
+    // Khung nút loa
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(GAME_WIDTH - 35, 30, 22, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = '20px sans-serif';
+    ctx.stroke();
+
+    // Icon Loa
+    ctx.font = '24px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(isMuted ? '🔇' : '🔊', GAME_WIDTH - 35, 37);
+    ctx.fillText(isMuted ? '🔇' : '🔊', GAME_WIDTH - 35, 38);
+    ctx.restore();
 
     if (!gameStarted) {
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
