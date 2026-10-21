@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí - Nút bật/tắt âm thanh rõ ràng nổi bật hơn 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí - Đã tích hợp hiệu ứng Shader & Ambient Lighting 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -48,7 +48,7 @@ game_html = """
         max-height: 540px; 
         overflow: hidden; 
         border-radius: 16px; 
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     }
     @media (max-width: 768px) {
         #gameContainer {
@@ -119,7 +119,6 @@ let droppedUmbrella = { x: 0, y: 0, vx: 0, vy: 0, rot: 0 };
 let bgCloudX = 0;
 let bgHillNearX = 0;
 
-// Khởi tạo ngôi sao ban đêm có tốc độ di chuyển
 for (let i = 0; i < 45; i++) {
     stars.push({
         x: Math.random() * 960,
@@ -137,10 +136,10 @@ let bgmTimer = null;
 let bgmStep = 0;
 
 const chillChords = [
-    [220.00, 277.18, 329.63, 415.30], // Amaj7
-    [185.00, 220.00, 277.18, 329.63], // F#m7
-    [246.94, 293.66, 369.99, 440.00], // Bm7
-    [164.81, 246.94, 311.13, 392.00]  // E7
+    [220.00, 277.18, 329.63, 415.30],
+    [185.00, 220.00, 277.18, 329.63],
+    [246.94, 293.66, 369.99, 440.00],
+    [164.81, 246.94, 311.13, 392.00]
 ];
 
 function initAudio() {
@@ -359,10 +358,15 @@ function drawBackground() {
     if (nightRatio > 0) {
         ctx.save();
         ctx.globalAlpha = nightRatio;
+        
+        // Shader Ambient Glow cho Mặt Trăng
+        ctx.shadowColor = '#fef08a';
+        ctx.shadowBlur = 20;
         ctx.fillStyle = '#fef08a';
         ctx.beginPath();
         ctx.arc(GAME_WIDTH - 120, 80, 26, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
 
         ctx.fillStyle = `rgb(${topR}, ${topG}, ${topB})`;
         ctx.beginPath();
@@ -559,6 +563,11 @@ function drawCrow(x, y, frame) {
 }
 
 function drawThunderCloud(x, y) {
+    ctx.save();
+    // Shader Glow Sét
+    ctx.shadowColor = '#facc15';
+    ctx.shadowBlur = 10;
+
     ctx.fillStyle = '#334155';
     ctx.beginPath();
     ctx.arc(x + 18, y + 22, 16, 0, Math.PI * 2);
@@ -576,6 +585,30 @@ function drawThunderCloud(x, y) {
     ctx.lineTo(x + 30, y + 38);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
+}
+
+// --- SHADER OVERLAY (VIGNETTE & AMBIENT SCANLINE SHADER) ---
+function drawShaders() {
+    ctx.save();
+    
+    // 1. Vignette Shader (Bo góc tối Cinema)
+    let vigGrad = ctx.createRadialGradient(
+        GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.35,
+        GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.7
+    );
+    vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vigGrad.addColorStop(1, 'rgba(0,0,0,0.38)');
+    ctx.fillStyle = vigGrad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // 2. Scanline Retro Shader (Dải hiệu ứng vi dải cuộn)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+    for (let y = 0; y < GAME_HEIGHT; y += 4) {
+        ctx.fillRect(0, y, GAME_WIDTH, 1.5);
+    }
+
+    ctx.restore();
 }
 
 function update() {
@@ -645,34 +678,29 @@ function drawUI() {
     ctx.shadowBlur = 3;
     ctx.textAlign = 'left';
 
-    // Chỉ số FPS
     ctx.fillStyle = '#00ffcc';
     ctx.font = 'bold 15px monospace';
     ctx.fillText('FPS  : ' + fps, 15, 28);
 
-    // Chỉ số SPEED
     ctx.fillStyle = '#fde047';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 48);
 
-    // Chỉ số CPS
     ctx.fillStyle = '#ff77e9';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('CPS  : ' + currentCPS, 15, 68);
 
-    // Điểm số
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
     ctx.restore();
 
-    // NÚT LOA NỔI BẬT & RÕ RÀNG HƠN (MUTE / UNMUTE)
+    // NÚT LOA MUTE / UNMUTE
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
     ctx.shadowBlur = 6;
     
-    // Khung nút loa
     ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
@@ -681,7 +709,6 @@ function drawUI() {
     ctx.fill();
     ctx.stroke();
 
-    // Icon Loa
     ctx.font = '24px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(isMuted ? '🔇' : '🔊', GAME_WIDTH - 35, 38);
@@ -769,6 +796,9 @@ function draw() {
         if (obs.type === 'crow') drawCrow(obs.x, obs.y, frameCount);
         else drawThunderCloud(obs.x, obs.y);
     });
+
+    // Vẽ thêm Shader Overlay
+    drawShaders();
 
     drawUI();
     ctx.restore();
