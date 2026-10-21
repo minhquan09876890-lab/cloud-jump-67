@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí - Thêm đo CPS & Ngôi sao chuyển động ban đêm 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -48,7 +48,7 @@ game_html = """
         max-height: 540px; 
         overflow: hidden; 
         border-radius: 16px; 
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     }
     @media (max-width: 768px) {
         #gameContainer {
@@ -119,33 +119,40 @@ let droppedUmbrella = { x: 0, y: 0, vx: 0, vy: 0, rot: 0 };
 let bgCloudX = 0;
 let bgHillNearX = 0;
 
-// Khởi tạo ngôi sao ban đêm có tốc độ di chuyển
 for (let i = 0; i < 45; i++) {
     stars.push({
         x: Math.random() * 960,
         y: Math.random() * 260,
         size: Math.random() * 2 + 1,
-        speed: Math.random() * 0.4 + 0.1, // Tốc độ trôi nhẹ
+        speed: Math.random() * 0.4 + 0.1,
         alpha: Math.random()
     });
 }
 
-// --- NHẠC NỀN & ÂM THANH LO-FI / CHILLOUT ---
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
+// --- HỆ THỐNG ÂM THANH ĐÃ SỬA LỖI (FIXED AUDIO ENGINE) ---
 let audioCtx = null;
 let bgmTimer = null;
 let bgmStep = 0;
 
 const chillChords = [
-    [220.00, 277.18, 329.63, 415.30], // Amaj7
-    [185.00, 220.00, 277.18, 329.63], // F#m7
-    [246.94, 293.66, 369.99, 440.00], // Bm7
-    [164.81, 246.94, 311.13, 392.00]  // E7
+    [220.00, 277.18, 329.63, 415.30],
+    [185.00, 220.00, 277.18, 329.63],
+    [246.94, 293.66, 369.99, 440.00],
+    [164.81, 246.94, 311.13, 392.00]
 ];
 
 function initAudio() {
-    if (!audioCtx) audioCtx = new AudioCtx();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    } catch (e) {
+        console.warn("AudioContext init error:", e);
+    }
 }
 
 function startBGM() {
@@ -153,28 +160,30 @@ function startBGM() {
     bgmStep = 0;
     
     bgmTimer = setInterval(() => {
-        if (!gameStarted || gameOver || isMuted || !audioCtx) return;
+        if (!gameStarted || gameOver || isMuted || !audioCtx || audioCtx.state !== 'running') return;
         
-        let chordIndex = Math.floor(bgmStep / 4) % chillChords.length;
-        let chord = chillChords[chordIndex];
-        let noteFreq = chord[bgmStep % 4];
+        try {
+            let chordIndex = Math.floor(bgmStep / 4) % chillChords.length;
+            let chord = chillChords[chordIndex];
+            let noteFreq = chord[bgmStep % 4];
 
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(noteFreq, audioCtx.currentTime);
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(noteFreq, audioCtx.currentTime);
 
-        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+            gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
 
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.85);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.85);
 
-        bgmStep++;
+            bgmStep++;
+        } catch (e) {}
     }, 450);
 }
 
@@ -186,56 +195,62 @@ function stopBGM() {
 }
 
 function playJumpSound() {
-    if (!audioCtx || isMuted) return;
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(260, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.12);
-    
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.12);
-}
-
-function playScoreSound() {
-    if (!audioCtx || isMuted) return;
-    let notes = [523.25, 659.25, 783.99];
-    notes.forEach((freq, idx) => {
+    if (!audioCtx || isMuted || audioCtx.state !== 'running') return;
+    try {
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.05);
+        osc.frequency.setValueAtTime(260, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.12);
         
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.05 + 0.3);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
         
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start(audioCtx.currentTime + idx * 0.05);
-        osc.stop(audioCtx.currentTime + idx * 0.05 + 0.3);
-    });
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+    } catch (e) {}
+}
+
+function playScoreSound() {
+    if (!audioCtx || isMuted || audioCtx.state !== 'running') return;
+    try {
+        let notes = [523.25, 659.25, 783.99];
+        notes.forEach((freq, idx) => {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.05);
+            
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime + idx * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.05 + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + idx * 0.05);
+            osc.stop(audioCtx.currentTime + idx * 0.05 + 0.3);
+        });
+    } catch (e) {}
 }
 
 function playHitSound() {
-    if (!audioCtx || isMuted) return;
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.35);
-    
-    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.35);
+    if (!audioCtx || isMuted || audioCtx.state !== 'running') return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.35);
+        
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+    } catch (e) {}
 }
 
 function triggerGameOver() {
@@ -267,6 +282,8 @@ function handleInput(e) {
     window.focus();
     canvas.focus();
 
+    initAudio();
+
     if (e) {
         if (e.type === 'keydown') {
             if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
@@ -295,7 +312,6 @@ function handleInput(e) {
     }
 
     recordClick();
-    initAudio();
     
     if (gameOver) { resetGame(); return; }
     if (!gameStarted) { 
@@ -359,17 +375,21 @@ function drawBackground() {
     if (nightRatio > 0) {
         ctx.save();
         ctx.globalAlpha = nightRatio;
+        
+        ctx.shadowColor = '#fef08a';
+        ctx.shadowBlur = 20;
         ctx.fillStyle = '#fef08a';
         ctx.beginPath();
         ctx.arc(GAME_WIDTH - 120, 80, 26, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
 
         ctx.fillStyle = `rgb(${topR}, ${topG}, ${topB})`;
         ctx.beginPath();
         ctx.arc(GAME_WIDTH - 110, 72, 22, 0, Math.PI * 2);
         ctx.fill();
 
-        // Vẽ Ngôi Sao Chuyển Động
+        // Ngôi Sao Chuyển Động
         stars.forEach(s => {
             if (gameStarted && !gameOver) {
                 s.x -= s.speed * (obstacleSpeed / 4);
@@ -559,6 +579,10 @@ function drawCrow(x, y, frame) {
 }
 
 function drawThunderCloud(x, y) {
+    ctx.save();
+    ctx.shadowColor = '#facc15';
+    ctx.shadowBlur = 10;
+
     ctx.fillStyle = '#334155';
     ctx.beginPath();
     ctx.arc(x + 18, y + 22, 16, 0, Math.PI * 2);
@@ -576,6 +600,29 @@ function drawThunderCloud(x, y) {
     ctx.lineTo(x + 30, y + 38);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
+}
+
+function drawShaders() {
+    ctx.save();
+    
+    // Vignette Shader
+    let vigGrad = ctx.createRadialGradient(
+        GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.35,
+        GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.7
+    );
+    vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vigGrad.addColorStop(1, 'rgba(0,0,0,0.38)');
+    ctx.fillStyle = vigGrad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // Scanline Retro Shader
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+    for (let y = 0; y < GAME_HEIGHT; y += 4) {
+        ctx.fillRect(0, y, GAME_WIDTH, 1.5);
+    }
+
+    ctx.restore();
 }
 
 function update() {
@@ -633,7 +680,6 @@ function update() {
 
 function updateCPS() {
     let now = performance.now();
-    // Loại bỏ các cú nhấp quá 1 giây (1000ms)
     clickTimestamps = clickTimestamps.filter(t => now - t <= 1000);
     currentCPS = clickTimestamps.length;
 }
@@ -641,40 +687,46 @@ function updateCPS() {
 function drawUI() {
     updateCPS();
 
+    ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 3;
     ctx.textAlign = 'left';
 
-    // 1. Chỉ số FPS
     ctx.fillStyle = '#00ffcc';
     ctx.font = 'bold 15px monospace';
     ctx.fillText('FPS  : ' + fps, 15, 28);
 
-    // 2. Chỉ số Tốc độ (SPEED)
     ctx.fillStyle = '#fde047';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('SPEED: ' + obstacleSpeed.toFixed(1) + 'x', 15, 48);
 
-    // 3. Chỉ số CPS (Clicks Per Second)
     ctx.fillStyle = '#ff77e9';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('CPS  : ' + currentCPS, 15, 68);
 
-    // Điểm số góc phải
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(String(score).padStart(6, '0'), GAME_WIDTH - 80, 38);
-    ctx.shadowBlur = 0;
+    ctx.restore();
 
-    // Nút Mute
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    // NÚT LOA MUTE / UNMUTE
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 6;
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(GAME_WIDTH - 35, 30, 22, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = '20px sans-serif';
+    ctx.stroke();
+
+    ctx.font = '24px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(isMuted ? '🔇' : '🔊', GAME_WIDTH - 35, 37);
+    ctx.fillText(isMuted ? '🔇' : '🔊', GAME_WIDTH - 35, 38);
+    ctx.restore();
 
     if (!gameStarted) {
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -759,6 +811,7 @@ function draw() {
         else drawThunderCloud(obs.x, obs.y);
     });
 
+    drawShaders();
     drawUI();
     ctx.restore();
 }
