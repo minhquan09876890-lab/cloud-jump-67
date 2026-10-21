@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶trò chơi siêu cấp bá khí🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí - Cập nhật hiệu ứng Ngày & Đêm 🥶")
 
 game_html = """
 <!DOCTYPE html>
@@ -48,8 +48,7 @@ game_html = """
         max-height: 540px; 
         overflow: hidden; 
         border-radius: 16px; 
-        box-shadow: 0 12px 32px rgba(2, 132, 199, 0.25);
-        background: linear-gradient(to bottom, #0284c7 0%, #38bdf8 65%, #bae6fd 100%);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
     }
     @media (max-width: 768px) {
         #gameContainer {
@@ -95,6 +94,7 @@ window.addEventListener('resize', resizeCanvas);
 let cloud = { x: 80, y: 180, width: 55, height: 40, gravity: 0.32, lift: -6.5, velocity: 0, rotation: 0 };
 let obstacles = [];
 let windParticles = [];
+let stars = [];
 let frameCount = 0;
 let nextObstacleFrame = 60;
 let score = 0;
@@ -115,13 +115,22 @@ let droppedUmbrella = { x: 0, y: 0, vx: 0, vy: 0, rot: 0 };
 let bgCloudX = 0;
 let bgHillNearX = 0;
 
+// Khởi tạo các ngôi sao ban đêm
+for (let i = 0; i < 40; i++) {
+    stars.push({
+        x: Math.random() * 960,
+        y: Math.random() * 250,
+        size: Math.random() * 2 + 1,
+        alpha: Math.random()
+    });
+}
+
 // --- NHẠC NỀN & ÂM THANH LO-FI / CHILLOUT ---
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let bgmTimer = null;
 let bgmStep = 0;
 
-// Hợp âm Jazz / Chillout (Amaj7 -> F#m7 -> Bm7 -> E7)
 const chillChords = [
     [220.00, 277.18, 329.63, 415.30], // Amaj7
     [185.00, 220.00, 277.18, 329.63], // F#m7
@@ -304,13 +313,70 @@ document.addEventListener('keydown', handleInput, true);
 canvas.addEventListener('touchstart', handleInput, { passive: false });
 canvas.addEventListener('mousedown', handleInput);
 
+// HÀM VẼ BẦU TRỜI NGÀY & ĐÊM
 function drawBackground() {
     if (gameStarted && !gameOver) {
         bgCloudX = (bgCloudX - (0.7 * (obstacleSpeed / 4))) % GAME_WIDTH;
         bgHillNearX = (bgHillNearX - (2.0 * (obstacleSpeed / 4))) % GAME_WIDTH;
     }
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    // Tính toán chu kỳ ngày/đêm theo frameCount (mỗi chu kỳ ~ 1200 frames / 20 giây)
+    let cycle = (frameCount % 1200) / 1200; // Value from 0.0 to 1.0
+    
+    // Tỷ lệ Ban đêm: 0.0 -> 0.35 (Ngày), 0.35 -> 0.5 (Hoàng hôn), 0.5 -> 0.85 (Đêm), 0.85 -> 1.0 (Bình minh)
+    let nightRatio = 0;
+    if (cycle > 0.35 && cycle <= 0.5) {
+        nightRatio = (cycle - 0.35) / 0.15;
+    } else if (cycle > 0.5 && cycle <= 0.85) {
+        nightRatio = 1;
+    } else if (cycle > 0.85) {
+        nightRatio = 1 - (cycle - 0.85) / 0.15;
+    }
+
+    // Gradient Bầu trời
+    let topR = Math.round(2 * (1 - nightRatio) + 15 * nightRatio);
+    let topG = Math.round(132 * (1 - nightRatio) + 23 * nightRatio);
+    let topB = Math.round(199 * (1 - nightRatio) + 42 * nightRatio);
+
+    let botR = Math.round(186 * (1 - nightRatio) + 30 * nightRatio);
+    let botG = Math.round(230 * (1 - nightRatio) + 41 * nightRatio);
+    let botB = Math.round(253 * (1 - nightRatio) + 89 * nightRatio);
+
+    let skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+    skyGrad.addColorStop(0, `rgb(${topR}, ${topG}, ${topB})`);
+    skyGrad.addColorStop(1, `rgb(${botR}, ${botG}, ${botB})`);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // Vẽ Mặt Trăng Ban Đêm
+    if (nightRatio > 0) {
+        ctx.save();
+        ctx.globalAlpha = nightRatio;
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(GAME_WIDTH - 120, 80, 26, 0, Math.PI * 2);
+        ctx.fill();
+        // Che mặt trăng tạo hình khuyết
+        ctx.fillStyle = `rgb(${topR}, ${topG}, ${topB})`;
+        ctx.beginPath();
+        ctx.arc(GAME_WIDTH - 110, 72, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vẽ Sao Nhấp Nháy
+        stars.forEach(s => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * nightRatio})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+            s.alpha += (Math.random() - 0.5) * 0.05;
+            s.alpha = Math.max(0.2, Math.min(1, s.alpha));
+        });
+        ctx.restore();
+    }
+
+    // Mây nền
+    let cloudAlpha = 0.45 - nightRatio * 0.25;
+    ctx.fillStyle = `rgba(255, 255, 255, ${cloudAlpha})`;
     for (let offset of [bgCloudX, bgCloudX + GAME_WIDTH]) {
         ctx.beginPath();
         ctx.arc(offset + 80, 70, 35, 0, Math.PI * 2);
@@ -333,7 +399,12 @@ function drawBackground() {
         ctx.fill();
     }
 
-    ctx.fillStyle = '#15803d';
+    // Đồi đằng trước
+    let hillR = Math.round(21 * (1 - nightRatio) + 6 * nightRatio);
+    let hillG = Math.round(128 * (1 - nightRatio) + 40 * nightRatio);
+    let hillB = Math.round(61 * (1 - nightRatio) + 25 * nightRatio);
+    ctx.fillStyle = `rgb(${hillR}, ${hillG}, ${hillB})`;
+
     for (let offset of [bgHillNearX, bgHillNearX + GAME_WIDTH]) {
         ctx.beginPath();
         ctx.arc(offset + GAME_WIDTH * 0.1, GAME_HEIGHT + 240, GAME_WIDTH * 0.35, 0, Math.PI * 2);
