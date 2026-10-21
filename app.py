@@ -11,7 +11,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("☁️ Trò Chơi Đám Mây Bay ☁️")
-st.caption("🥶 trò chơi siêu cấp bá khí - Đã tăng âm lượng toàn bộ âm thanh 🔊 🥶")
+st.caption("🥶 trò chơi siêu cấp bá khí 🥶")
 
 game_html = """
 <!DOCTYPE html>
